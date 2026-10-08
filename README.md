@@ -19,6 +19,8 @@ git clone <this repo> ~/writer-skill && ~/writer-skill/install.sh
 ```
 /writer profile                     # build and show your style profile
 /writer tweet <what to write about> # also: thread, linkedin, blog, email, reply, docs
+/writer rewrite [light|natural|strong] <text>  # put a draft in your voice
+/writer check <text>                # how much it sounds like you, and what's off
 ```
 
 ## Better results: add real writing
