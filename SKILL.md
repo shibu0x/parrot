@@ -41,7 +41,7 @@ Use the numbers from `stats.py` for Mechanics; don't estimate what was counted. 
 
 ```markdown
 # Writing profile
-updated: <date> | messages analyzed: <N>
+updated: <date> | messages analyzed: <N> | confidence: <low|medium|high>
 
 ## Scores (0-100)
 casual, direct, technical, formal, humor, emotional
@@ -54,7 +54,7 @@ casual, direct, technical, formal, humor, emotional
 - language mix (e.g. Hinglish), slang and filler words with examples ("bro", "tbh")
 
 ## Signature (copy these)
-Habits that are clearly the user's choice: consistent across many messages and kept even when they had time to write carefully. Lowercase starts at 86%, "bro" as an opener, no full stop at the end, dropping apostrophes in "dont"/"lets" are signature. Give the count next to each.
+Habits that are clearly the user's choice: consistent across many messages and kept even when they had time to write carefully. Lowercase starts at 86%, "bro" as an opener, no full stop at the end, dropping apostrophes in "dont"/"lets" are signature. Every line needs evidence: the count, plus one real quote. `- opens with "so" (31 of 400): "so what's remaining now ig everything is done ?"`. No quote, no line.
 
 ## Noise (never copy)
 Things that come from typing fast to an AI, not from the voice:
@@ -77,6 +77,12 @@ One block per sample folder: messages analyzed, and how this channel differs fro
 ```
 
 Be concrete. "Casual" is useless; "starts with 'bro', no capital letters, no period at the end" is useful. Count, don't guess.
+
+Confidence:
+- low: under 50 messages, or most of them are bare commands ("fix it", "run it")
+- medium: 50+ real messages, no channel samples
+- high: 300+ messages, or channel samples for the channel being written
+Say it plainly. Low confidence means keep drafts close to neutral and tell the user why.
 
 When unsure whether a habit is signature or noise, ask: would they still do it in a post they reread before sending? If not, it's noise. A habit only goes in Signature if it shows up in at least ~20% of messages or is clearly deliberate (slang, a catchphrase).
 
@@ -104,10 +110,10 @@ Then show the profile to the user in a compact form. If there are no channel sam
 ```
 <final text>
 
-Style match: 91%  (vocab 90 · rhythm 93 · tone 92 · mechanics 88)
+Style match: 91%  (vocab 90 · rhythm 93 · tone 92 · mechanics 88)  confidence: medium, chat only
 ```
 
-Add the other drafts below only if the user asks for options.
+The confidence note says what the voice came from: `chat only`, or `12 tweet samples`. Add the other drafts below only if the user asks for options.
 
 ## 3. Rewrite
 
