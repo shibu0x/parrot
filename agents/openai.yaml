@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writer"
+  short_description: "Write, rewrite and check text in your own voice"
+  default_prompt: "Use $writer to write a tweet about what I just shipped, in my voice."

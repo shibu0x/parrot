@@ -1,6 +1,6 @@
 ---
 name: writer
-description: Writes tweets, posts, emails, blogs, replies in the USER'S OWN voice, learned from their past messages to terminal AI agents (Claude Code, Codex, Gemini CLI, Qwen Code, Copilot CLI, Kiro, Factory Droid, opencode, Aider). Use when the user runs /writer, or says "write this like me", "in my voice", "how I would write it". `/writer profile` builds or shows their style profile; `/writer <type> <topic>` drafts content.
+description: Writes tweets, posts, emails, blogs, replies in the USER'S OWN voice, learned from their past messages to terminal AI agents (Claude Code, Codex, Gemini CLI, Qwen Code, Copilot CLI, Kiro, Factory Droid, opencode, Aider). Use when the user runs /writer, or says "write this like me", "in my voice", "make this sound like me", "does this sound like me", "de-AI this". `/writer profile` builds their style profile; `/writer <type> <topic>` drafts; `/writer rewrite <text>` puts a draft in their voice; `/writer check <text>` reviews it.
 ---
 
 # writer
