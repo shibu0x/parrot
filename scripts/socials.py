@@ -12,7 +12,7 @@
   python3 scripts/socials.py set <anything> ...          # profile/post links, feeds, export files: type is detected
   python3 scripts/socials.py list | remove <n> | sync
   python3 scripts/socials.py find    # X / LinkedIn exports in ~/Downloads
-  python3 scripts/socials.py skip    # user wants none; socials.json exists = already asked
+  python3 scripts/socials.py skip    # user said: don't ask about links again
 
 Add only accounts that belong to the user. `--channel NAME` on `add` overrides the default channel.
 """
@@ -23,6 +23,7 @@ from xml.etree import ElementTree as ET
 from extract import SAMPLES, scrub
 
 CONFIG = os.path.expanduser("~/.writer/socials.json")
+DONT_ASK = os.path.expanduser("~/.writer/.socials-dont-ask")
 MAX_PER_SOURCE = 500
 UA = {"User-Agent": "writer-skill (+https://github.com/shibu0x/writer-skill)"}
 DEFAULT_CHANNEL = {"medium": "blog", "substack": "blog", "rss": "blog", "devto": "blog",
@@ -370,7 +371,7 @@ def main():
     sub.add_parser("list")
     sub.add_parser("sync")
     sub.add_parser("find", help="look for X / LinkedIn exports in ~/Downloads")
-    sub.add_parser("skip", help="remember the user wants no socials, so they aren't asked again")
+    sub.add_parser("skip", help="user said don't ask about links again")
     sub.add_parser("test")
     a = ap.parse_args()
 
@@ -410,7 +411,7 @@ def main():
         for kind, f in find():
             print(f"{kind} {f}")
     elif a.cmd == "skip":
-        save(entries)
+        open(DONT_ASK, "w").close()
         print("saved, won't ask again")
 
 

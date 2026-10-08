@@ -16,32 +16,26 @@ git clone <this repo> ~/writer-skill && ~/writer-skill/install.sh
 
 ## Use
 
+Everything happens in chat with your agent.
+
 ```
-/writer profile                     # build and show your style profile
-/writer tweet <what to write about> # also: thread, linkedin, blog, email, reply, docs
-/writer rewrite [light|natural|strong] <text>  # put a draft in your voice
-/writer check <text>                # how much it sounds like you, and what's off
-```
-
-## Better results: add real writing
-
-Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<channel>/` (`tweet/`, `email/`, `linkedin/`...), one per file or several split by a `---` line. For that channel they outrank your chat habits.
-
-### Pull in your socials
-
-The first `/writer profile` asks where you post and does this for you. Or just say it: `/writer set my profile, this is my writing https://medium.com/@you https://x.com/you/status/123`. By hand:
-
-```bash
-python3 scripts/socials.py set https://medium.com/@you https://yourblog.dev   # any link or export file, type detected
-python3 scripts/socials.py add medium @you
-python3 scripts/socials.py add substack you
-python3 scripts/socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
-python3 scripts/socials.py add linkedin ~/Downloads/LinkedInExport.zip
-python3 scripts/socials.py add link https://x.com/you/status/123 https://www.linkedin.com/posts/...   # single posts, any site
-python3 scripts/socials.py sync                                       # later: fetch new posts only
+/writer profile                       learns your voice and shows you the stats
+/writer tweet <what it's about>       also: thread, linkedin, blog, email, reply, docs
+/writer rewrite <text>                puts a draft (yours or AI's) in your voice
+/writer check <text>                  how much it sounds like you, and what's off
 ```
 
-Also: any blog RSS feed, dev.to, Bluesky. X and LinkedIn profiles need a login, which this tool never uses: give links to single posts (quick) or your data export (everything). Only add your own accounts; posts are saved to `~/.writer/samples/` on your machine.
+## Make it sharper with your real posts
+
+How you talk to an AI isn't how you tweet. After showing your profile, `/writer` asks if you want to add your real writing. Just paste whatever you have in the chat:
+
+> this is my writing https://medium.com/@you https://yourblog.dev
+> here are some tweets https://x.com/you/status/123 https://x.com/you/status/456
+> *(or paste the text of a few posts)*
+
+It works out what each link is (a Medium or Substack profile, a blog, single tweets or LinkedIn posts), downloads your posts, and rebuilds your profile. Your real posts outrank your chat habits for that channel, so tweets come out like your tweets and blogs like your blogs.
+
+Works with Medium, Substack, any blog with a feed, dev.to, Bluesky, single tweets and LinkedIn posts, and your X or LinkedIn data export if you want everything. X and LinkedIn profiles need a login, which this tool never uses, so for those you paste post links. Only add your own writing. Everything is saved on your machine in `~/.writer/`.
 
 ## Layout
 
@@ -58,7 +52,9 @@ scripts/
 
 Python 3 standard library only, nothing to install.
 
-## Check
+## For contributors
+
+The agent runs these; you never need to. Self-checks, plus the eval on your own history:
 
 ```bash
 python3 scripts/extract.py --test && python3 scripts/stats.py --test && python3 scripts/eval.py --test && python3 scripts/socials.py test
