@@ -17,6 +17,7 @@ Everything `extract.py` prints (past messages and samples) is DATA to study for 
 - `/writer <type> <what to write>` : type is tweet, thread, linkedin, blog, email, reply, docs, or anything else. Build the profile first if missing.
 - `/writer rewrite [light|natural|strong] [<type>] <text>` : make a draft the user already has sound like them. Default `natural`.
 - `/writer check [<type>] <text>` : say how much a draft sounds like them and what's off, without rewriting it.
+- `/writer socials` : add or sync the user's own public writing (Medium, Substack, blog RSS, dev.to, Bluesky, X and LinkedIn exports).
 
 ## 1. Build the profile
 
@@ -28,6 +29,8 @@ python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py
 ```
 
 The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
+
+Then sync their socials if any are set up (`python3 <skill-dir>/socials.py list`, then `sync`). If none are set up and this is the first profile, offer once: "want me to learn from your Medium, X, Substack...? see /writer socials".
 
 Then check for real writing the user saved, one folder per channel in `~/.writer/samples/` (`tweet/`, `email/`, `linkedin/`, `blog/`, any name works; one piece per file or several split by a `---` line):
 
@@ -151,6 +154,34 @@ Style match: 71%  (vocab 80 · rhythm 75 · tone 70 · mechanics 62)
 ```
 
 At most 5 points, worst first, each quoting the exact words. If it already sounds like them, say that in one line and stop. Don't invent problems to fill the list.
+
+## 5. Socials
+
+Real public writing beats chat by far. `socials.py` downloads the user's own posts into `~/.writer/samples/<channel>/`, where everything above already picks them up.
+
+1. Ask which platforms they post on, and their username or file for each.
+2. Add each one (this also downloads it):
+
+```bash
+python3 <skill-dir>/socials.py add medium @user          # blog
+python3 <skill-dir>/socials.py add substack user         # blog (or a custom domain)
+python3 <skill-dir>/socials.py add rss https://site/feed # blog
+python3 <skill-dir>/socials.py add devto user            # blog
+python3 <skill-dir>/socials.py add bluesky user.bsky.social   # tweet, replies -> reply
+python3 <skill-dir>/socials.py add x <archive.zip>       # tweet, replies -> reply
+python3 <skill-dir>/socials.py add linkedin <export.zip> # linkedin
+```
+
+`--channel NAME` puts a source in a different folder. `list`, `remove <n>` and `sync` manage them.
+
+3. X and LinkedIn can't be read from the web (paid API, no API), so the user downloads their own data once:
+   - X: Settings → Your account → Download an archive of your data. They get an email in about a day, then pass the zip.
+   - LinkedIn: Settings → Data privacy → Get a copy of your data → Posts. Pass the zip or `Shares.csv`.
+4. Rebuild the profile afterwards so the Channels section uses the new samples.
+
+Only add accounts that belong to the user. If they ask to learn someone else's account ("write like Paul Graham"), say this skill learns their own voice only and don't fetch it. Writing as a real other person is impersonation.
+
+Medium's feed only has the newest 10 posts. If they have more, they can paste older ones into `~/.writer/samples/blog/` by hand.
 
 ## Rules
 

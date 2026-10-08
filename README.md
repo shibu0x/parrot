@@ -27,9 +27,21 @@ git clone <this repo> ~/writer-skill && ~/writer-skill/install.sh
 
 Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<channel>/` (`tweet/`, `email/`, `linkedin/`...), one per file or several split by a `---` line. For that channel they outrank your chat habits.
 
+### Pull in your socials
+
+```bash
+python3 socials.py add medium @you
+python3 socials.py add substack you
+python3 socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
+python3 socials.py add linkedin ~/Downloads/LinkedInExport.zip
+python3 socials.py sync                                       # later: fetch new posts only
+```
+
+Also: any blog RSS feed, dev.to, Bluesky. Only add your own accounts; posts are saved to `~/.writer/samples/` on your machine.
+
 ## Check
 
 ```bash
-python3 extract.py --test && python3 stats.py --test && python3 eval.py --test
+python3 extract.py --test && python3 stats.py --test && python3 eval.py --test && python3 socials.py test
 python3 extract.py --limit 1000 | python3 eval.py   # can the scorer tell you from generic AI text?
 ```
