@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pull the user's own public writing into ~/.writer/samples/<channel>/ so it outranks chat habits.
+"""Pull the user's own public writing into ~/.parrot/samples/<channel>/ so it outranks chat habits.
 
   python3 scripts/socials.py add medium @you            # blog channel
   python3 scripts/socials.py add substack you           # you.substack.com, blog channel
@@ -22,10 +22,10 @@ from xml.etree import ElementTree as ET
 
 from extract import SAMPLES, scrub
 
-CONFIG = os.path.expanduser("~/.writer/socials.json")
-DONT_ASK = os.path.expanduser("~/.writer/.socials-dont-ask")
+CONFIG = os.path.expanduser("~/.parrot/socials.json")
+DONT_ASK = os.path.expanduser("~/.parrot/.socials-dont-ask")
 MAX_PER_SOURCE = 500
-UA = {"User-Agent": "writer-skill (+https://github.com/shibu0x/writer-skill)"}
+UA = {"User-Agent": "parrot (+https://github.com/shibu0x/parrot)"}
 DEFAULT_CHANNEL = {"medium": "blog", "substack": "blog", "rss": "blog", "devto": "blog",
                    "bluesky": "tweet", "x": "tweet", "linkedin": "linkedin", "link": "blog"}
 
@@ -172,7 +172,7 @@ def link(url):
             if want in pid or want.rsplit("-", 1)[-1] in pid:
                 yield pid, text, ch
                 return
-        raise ValueError("not in the author's Medium feed (it only has the newest 10). Paste the text into ~/.writer/samples/blog/ by hand.")
+        raise ValueError("not in the author's Medium feed (it only has the newest 10). Paste the post text in the chat instead.")
     else:
         page = get(url).decode("utf-8", "ignore")
         text = _ld_text(page)
@@ -184,7 +184,7 @@ def link(url):
             paras = [p for p in html_text(main.group(0) if main else page).split("\n\n") if len(p.split()) >= 8]
             text = "\n\n".join(paras) if sum(len(p.split()) for p in paras) >= 50 else ""
         if not text:
-            raise ValueError("couldn't find the post text on that page. Paste it into ~/.writer/samples/blog/ by hand.")
+            raise ValueError("couldn't find the post text on that page. Paste the post text in the chat instead.")
         yield url, text, None
 
 

@@ -137,7 +137,7 @@ def emit(msgs):
     print("\n---\n".join(msgs))
 
 
-SAMPLES = os.path.expanduser("~/.writer/samples")
+SAMPLES = os.path.expanduser("~/.parrot/samples")
 
 
 def samples(channel, base=SAMPLES):
