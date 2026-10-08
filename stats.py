@@ -11,6 +11,31 @@ APOS = {"dont": "don't", "cant": "can't", "wont": "won't", "didnt": "didn't", "d
         "isnt": "isn't", "im": "i'm", "ive": "i've", "lets": "let's", "whats": "what's", "thats": "that's"}
 STOP = set("the a an to of and or in on for is it this that i you we be are with can so but if as at by not my me do just from what how why it's".split())
 
+# Phrases that read as AI. Only flagged when the user never uses them, so their real habits always win.
+SLOP = [
+    r"\bdelv(e|es|ing)\b", r"\bdive (deep )?into\b", r"\bunpack(ing)?\b", r"\bleverag(e|es|ing)\b", r"\butiliz(e|es|ing)\b",
+    r"\bharness(ing)?\b", r"\bunlock(s|ing)?\b", r"\bempower(s|ing)?\b", r"\belevat(e|es|ing)\b", r"\bsupercharg(e|es|ing)\b",
+    r"\bseamless(ly)?\b", r"\brobust\b", r"\bcutting[- ]edge\b", r"\bgame[- ]?chang(er|ing)\b", r"\brevolutioni[sz](e|es|ing)\b",
+    r"\btapestry\b", r"\brealm\b", r"\blandscape\b", r"\bjourney\b", r"\bever[- ]evolving\b", r"\bfast[- ]paced\b",
+    r"\b(excited|thrilled|proud|delighted) to (announce|share|introduce)\b", r"\bin today's\b", r"\bit'?s (important|worth) not(ing|e)\b",
+    r"\bfurthermore\b", r"\bmoreover\b", r"\badditionally\b", r"\bmoving forward\b", r"\bat the end of the day\b",
+    r"\blet that sink in\b", r"\bread that again\b", r"\bhere'?s the thing\b", r"\bthis changes everything\b",
+    r"\bnobody (is talking|talks) about\b", r"\bwhat nobody tells you\b",
+    r"\b(it'?s|this is) not (just )?(a |an |about )?\w+[^.\n]{0,30}[,.;] (it'?s|this is)\b",  # "it's not X, it's Y"
+    r"(#\w+\s*){3,}",  # hashtag soup
+]
+
+
+def slop(msgs, draft):
+    mine = " ".join(msgs)
+    hits = []
+    for rx in SLOP:
+        m = re.search(rx, draft, re.I)
+        if m and not re.search(rx, mine, re.I):
+            hits.append(m.group(0).strip())
+    return hits
+
+
 # Rate features: share of units (messages, or draft lines) showing the habit.
 FEATURES = {
     "starts lowercase": lambda t: t[:1].islower(),
@@ -72,6 +97,10 @@ def demo():
     msgs = ["bro is it running ?", "ok so lets push it", "why you removed the import ?"]
     assert match(msgs, "bro its done\nlets ship it ?")[0] > match(msgs, "I'm thrilled to announce this!\nIt's live — try it.")[0]
     assert "messages: 3" in profile(msgs)
+    ai = "We're thrilled to announce our robust tool. It's not just a tool, it's a movement. #ai #dev #build"
+    assert len(slop(msgs, ai)) == 4, slop(msgs, ai)
+    assert slop(msgs, "bro its done lets ship it") == []
+    assert slop(msgs + ["we leverage the pool"], "leverage it") == []  # user's own word is fine
     print("stats ok")
 
 
@@ -90,5 +119,7 @@ if __name__ == "__main__":
         score, notes = match(msgs, a.draft)
         print(f"mechanics match: {score}%")
         print("\n".join(notes))
+        hits = slop(msgs, a.draft)
+        print(f"ai phrases: {len(hits)}" + (" -> " + ", ".join(f'"{h}"' for h in hits) if hits else ""))
     else:
         print(profile(msgs))
