@@ -28,5 +28,6 @@ Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<ch
 ## Check
 
 ```bash
-python3 extract.py --test && python3 stats.py --test
+python3 extract.py --test && python3 stats.py --test && python3 eval.py --test
+python3 extract.py --limit 1000 | python3 eval.py   # can the scorer tell you from generic AI text?
 ```

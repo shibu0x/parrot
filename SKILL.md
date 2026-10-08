@@ -86,7 +86,13 @@ Say it plainly. Low confidence means keep drafts close to neutral and tell the u
 
 When unsure whether a habit is signature or noise, ask: would they still do it in a post they reread before sending? If not, it's noise. A habit only goes in Signature if it shows up in at least ~20% of messages or is clearly deliberate (slang, a catchphrase).
 
-Then show the profile to the user in a compact form. If there are no channel samples, tell them once: dropping 5-10 real tweets or emails into `~/.writer/samples/<channel>/` makes that channel much more accurate.
+Then run the eval, which checks the scorer can tell their real writing from generic AI text:
+
+```bash
+python3 <skill-dir>/extract.py --limit 1000 | python3 <skill-dir>/eval.py
+```
+
+Show the profile to the user in a compact form, with the eval's three lines at the end. If it says FAIL, say the style match scores are unreliable for this user and lean on reading the samples. If there are no channel samples, tell them once: dropping 5-10 real tweets or emails into `~/.writer/samples/<channel>/` makes that channel much more accurate.
 
 ## 2. Write
 
