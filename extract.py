@@ -131,12 +131,29 @@ def collect(names):
                         yield (mtime, i), t
 
 
+SAMPLES = os.path.expanduser("~/.writer/samples")
+
+
+def samples(channel, base=SAMPLES):
+    """Real writing the user dropped in <base>/<channel>/. One piece per file, or several split by a --- line."""
+    for f in sorted(glob.glob(os.path.join(base, channel, "*"))):
+        if os.path.isfile(f):
+            for piece in re.split(r"\n---+\n", open(f, errors="ignore").read()):
+                if piece.strip():
+                    yield piece.strip()
+
+
+def channels(base=SAMPLES):
+    return sorted(d for d in os.listdir(base) if os.path.isdir(os.path.join(base, d))) if os.path.isdir(base) else []
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--source", default="all", help="all, or comma list of: " + ", ".join(SOURCES))
     ap.add_argument("--limit", type=int, default=400)
     ap.add_argument("--max-chars", type=int, default=1500, help="longer = probably a paste, not your writing")
-    ap.add_argument("--list", action="store_true", help="show how many messages each agent has")
+    ap.add_argument("--list", action="store_true", help="show how many messages each agent and sample channel has")
+    ap.add_argument("--samples", metavar="CHANNEL", help=f"print real writing from {SAMPLES}/CHANNEL instead of agent chats")
     a = ap.parse_args()
 
     names = list(SOURCES) if a.source == "all" else a.source.split(",")
@@ -146,6 +163,13 @@ def main():
     if a.list:
         for n in SOURCES:
             print(f"{n}: {sum(1 for _ in collect([n]))}")
+        for c in channels():
+            print(f"samples/{c}: {sum(1 for _ in samples(c))}")
+        return
+    if a.samples:
+        out = [scrub(x) for x in samples(a.samples)]
+        print(f"# {len(out)} messages\n")
+        print("\n---\n".join(out))
         return
 
     seen, out = set(), []
@@ -195,6 +219,13 @@ def demo():
     ]
     for d in not_user:
         assert not user_text(d), d
+    import tempfile
+    with tempfile.TemporaryDirectory() as d:
+        os.makedirs(f"{d}/tweet")
+        open(f"{d}/tweet/a.txt", "w").write("first post\n---\nsecond post")
+        open(f"{d}/tweet/b.txt", "w").write("third")
+        assert list(samples("tweet", d)) == ["first post", "second post", "third"]
+        assert channels(d) == ["tweet"]
     keep = "bro why you created new fiolder bro, it is running ?"
     assert scrub(keep) == keep
     print("extract ok")

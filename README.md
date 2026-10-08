@@ -21,6 +21,10 @@ git clone <this repo> ~/writer-skill && ~/writer-skill/install.sh
 /writer tweet <what to write about> # also: thread, linkedin, blog, email, reply, docs
 ```
 
+## Better results: add real writing
+
+Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<channel>/` (`tweet/`, `email/`, `linkedin/`...), one per file or several split by a `---` line. For that channel they outrank your chat habits.
+
 ## Check
 
 ```bash

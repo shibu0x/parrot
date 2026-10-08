@@ -25,6 +25,14 @@ python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py
 
 The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
 
+Then check for real writing the user saved, one folder per channel in `~/.writer/samples/` (`tweet/`, `email/`, `linkedin/`, `blog/`, any name works; one piece per file or several split by a `---` line):
+
+```bash
+python3 <skill-dir>/extract.py --list                     # last lines show samples/<channel>: <count>
+python3 <skill-dir>/extract.py --samples tweet            # read them
+python3 <skill-dir>/extract.py --samples tweet | python3 <skill-dir>/stats.py
+```
+
 Use the numbers from `stats.py` for Mechanics; don't estimate what was counted. Read the messages yourself for Voice and Samples. Write `~/.writer/profile.md`:
 
 ```markdown
@@ -57,6 +65,9 @@ Things that come from typing fast to an AI, not from the voice:
 - words/phrases they use a lot (quote them)
 - things they NEVER do (corporate tone, hedging, etc.)
 
+## Channels
+One block per sample folder: messages analyzed, and how this channel differs from chat (e.g. "tweets: still lowercase, but full sentences, no 'bro', one idea per line"). If there are no samples, say so: "no channel samples, everything comes from chat".
+
 ## Samples
 10-15 short verbatim messages that best show the voice. Skip anything with secrets, keys, emails, names of private people, or client data.
 ```
@@ -65,11 +76,15 @@ Be concrete. "Casual" is useless; "starts with 'bro', no capital letters, no per
 
 When unsure whether a habit is signature or noise, ask: would they still do it in a post they reread before sending? If not, it's noise. A habit only goes in Signature if it shows up in at least ~20% of messages or is clearly deliberate (slang, a catchphrase).
 
-Then show the profile to the user in a compact form.
+Then show the profile to the user in a compact form. If there are no channel samples, tell them once: dropping 5-10 real tweets or emails into `~/.writer/samples/<channel>/` makes that channel much more accurate.
 
 ## 2. Write
 
-1. Read `~/.writer/profile.md`.
+1. Read `~/.writer/profile.md`. Pick the channel folder matching the type (tweet and thread use `tweet/`, etc.). Which voice wins, highest first:
+   1. what the user says in this request ("keep it formal")
+   2. the channel's samples, if that folder has any
+   3. Signature from chat
+   That's how real tweets beat chat habits: if their tweets use capitals, use capitals in tweets.
 2. Note the gap: chat messages to an AI are not tweets. Copy everything under Signature, nothing under Noise. Fit the format (a tweet is under 280 chars, a blog has structure).
    Never add mistakes to look human: no planted typos, random fragments, or fake slang. Text sounds like the user because of their word choice and rhythm, not because it has errors.
 3. Write 3 different drafts.
@@ -77,6 +92,7 @@ Then show the profile to the user in a compact form.
    ```bash
    python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py --draft "<draft>"
    ```
+   If the channel has samples, score against them instead: `extract.py --samples <channel> | stats.py --draft "<draft>"`.
    It prints a mechanics match % and the habits the draft gets most wrong. Then score the rest yourself (0-100): vocabulary, sentence rhythm, tone, and "would they actually send this". Penalize anything that smells like AI: "delve", "excited to announce", "game-changer", tidy rule-of-three lists, em dashes if the user doesn't use them, emoji the user doesn't use, hashtag soup.
 5. If the best scores under 85, rewrite it and score again (max 2 rounds).
 6. Output:
