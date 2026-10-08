@@ -66,3 +66,7 @@ The agent runs these; you never need to. Self-checks, plus the eval on your own 
 python3 scripts/extract.py --test && python3 scripts/stats.py --test && python3 scripts/eval.py --test && python3 scripts/socials.py test
 python3 scripts/extract.py --limit 1000 | python3 scripts/eval.py   # can the scorer tell you from generic AI text?
 ```
+
+## License
+
+MIT
