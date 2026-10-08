@@ -8,13 +8,14 @@
   python3 socials.py add bluesky you.bsky.social   # tweet channel
   python3 socials.py add x ~/Downloads/twitter-archive.zip   # tweet + reply channels
   python3 socials.py add linkedin ~/Downloads/Basic_LinkedInDataExport.zip
+  python3 socials.py add link <url> [<url> ...]  # single tweets, LinkedIn posts, Medium/blog articles
   python3 socials.py list | remove <n> | sync
   python3 socials.py find    # X / LinkedIn exports in ~/Downloads
   python3 socials.py skip    # user wants none; socials.json exists = already asked
 
 Add only accounts that belong to the user. `--channel NAME` on `add` overrides the default channel.
 """
-import argparse, csv, hashlib, html, io, json, os, re, sys, urllib.request, zipfile
+import argparse, csv, hashlib, html, io, json, os, re, sys, urllib.parse, urllib.request, zipfile
 from html.parser import HTMLParser
 from xml.etree import ElementTree as ET
 
@@ -24,12 +25,12 @@ CONFIG = os.path.expanduser("~/.writer/socials.json")
 MAX_PER_SOURCE = 500
 UA = {"User-Agent": "writer-skill (+https://github.com/shibu0x/writer-skill)"}
 DEFAULT_CHANNEL = {"medium": "blog", "substack": "blog", "rss": "blog", "devto": "blog",
-                   "bluesky": "tweet", "x": "tweet", "linkedin": "linkedin"}
+                   "bluesky": "tweet", "x": "tweet", "linkedin": "linkedin", "link": "blog"}
 
 
 class _Text(HTMLParser):
     BLOCK = {"p", "br", "div", "li", "h1", "h2", "h3", "h4", "blockquote", "pre", "tr"}
-    SKIP = {"script", "style", "figure", "figcaption"}
+    SKIP = {"script", "style", "figure", "figcaption", "nav", "header", "footer", "aside", "form", "noscript"}
 
     def __init__(self):
         super().__init__()
@@ -43,7 +44,7 @@ class _Text(HTMLParser):
     def handle_endtag(self, tag):
         if tag in self.SKIP and self.skip:
             self.skip -= 1
-        if tag in self.BLOCK:
+        if tag in self.BLOCK and tag != "br":  # <br /> fires start and end; one newline is enough
             self.out.append("\n")
 
     def handle_data(self, data):
@@ -130,6 +131,61 @@ def linkedin(path):
                 yield row.get("ShareLink") or text, text, None
 
 
+def _ld_text(page):
+    """Post or article body from a page's JSON-LD (LinkedIn posts, most blogs and news sites)."""
+    for block in re.findall(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', page, re.S):
+        try:
+            data = json.loads(block)
+        except ValueError:
+            continue
+        for d in data if isinstance(data, list) else data.get("@graph", [data]):
+            if isinstance(d, dict):
+                body = d.get("articleBody") or (d.get("text") if d.get("@type") == "SocialMediaPosting" else None)
+                if body:
+                    return f"{d.get('headline', '')}\n\n{body}".strip() if d.get("@type") != "SocialMediaPosting" else body
+    return ""
+
+
+def link(url):
+    """One post from its URL. Profiles on X and LinkedIn need a login, so those are refused with the alternatives."""
+    u = urllib.parse.urlparse(url if "://" in url else "https://" + url)
+    host, path = u.netloc.lower().removeprefix("www.").removeprefix("mobile."), u.path
+    if host in ("x.com", "twitter.com"):
+        m = re.search(r"/status(?:es)?/(\d+)", path)
+        if not m:
+            raise ValueError("X profiles need a login to read. Give links to single tweets, or your X archive (add x <zip>).")
+        # ponytail: the embed CDN accepts any token today; compute the real one if it starts checking
+        t = json.loads(get(f"https://cdn.syndication.twimg.com/tweet-result?id={m.group(1)}&token=a"))
+        text = re.sub(r"https://t\.co/\w+", "", html.unescape(t.get("text", ""))).strip()
+        yield m.group(1), text, "reply" if t.get("in_reply_to_status_id_str") else "tweet"
+    elif host.endswith("linkedin.com"):
+        if not re.match(r"/(posts|feed/update|pulse)/", path):
+            raise ValueError("LinkedIn profiles need a login to read. Give links to single posts, or your LinkedIn export (add linkedin <zip>).")
+        yield url, _ld_text(get(url).decode("utf-8", "ignore")), "linkedin"
+    elif host == "medium.com" or host.endswith(".medium.com"):
+        # Medium blocks scripts on post pages, but the author's feed has the same text
+        who = next((p for p in path.split("/") if p.startswith("@")), None) or "@" + host.split(".")[0]
+        want = path.rstrip("/").split("/")[-1]
+        for pid, text, ch in feed(get(f"https://medium.com/feed/{who}")):
+            if want in pid or want.rsplit("-", 1)[-1] in pid:
+                yield pid, text, ch
+                return
+        raise ValueError("not in the author's Medium feed (it only has the newest 10). Paste the text into ~/.writer/samples/blog/ by hand.")
+    else:
+        page = get(url).decode("utf-8", "ignore")
+        text = _ld_text(page)
+        if not text:
+            art = re.search(r"<article.*?</article>", page, re.S)
+            text = html_text(art.group(0)) if art else ""
+        if not text:  # plain pages: keep lines that read like prose, drop menus and buttons
+            main = re.search(r"<main.*?</main>", page, re.S) or re.search(r"<body.*?</body>", page, re.S)
+            paras = [p for p in html_text(main.group(0) if main else page).split("\n\n") if len(p.split()) >= 8]
+            text = "\n\n".join(paras) if sum(len(p.split()) for p in paras) >= 50 else ""
+        if not text:
+            raise ValueError("couldn't find the post text on that page. Paste it into ~/.writer/samples/blog/ by hand.")
+        yield url, text, None
+
+
 def read(entry):
     kind, value = entry["type"], entry["value"]
     if kind == "medium":
@@ -147,6 +203,8 @@ def read(entry):
         return x_archive(value)
     if kind == "linkedin":
         return linkedin(value)
+    if kind == "link":
+        return link(value)
     raise ValueError(f"unknown type {kind}")
 
 
@@ -210,6 +268,7 @@ def demo():
       </item></channel></rss>"""
     (pid, text, _), = feed(rss)
     assert text == "My post\n\nso i built a thing\n\nit works", repr(text)
+    assert html_text("line one<br />line two<br /><br />next para") == "line one\nline two\n\nnext para"
     atom = b"""<feed xmlns="http://www.w3.org/2005/Atom"><entry><id>a</id><title>T</title><content type="html">&lt;p&gt;hi&lt;/p&gt;</content></entry></feed>"""
     assert list(feed(atom))[0][1] == "T\n\nhi"
     with tempfile.TemporaryDirectory() as d:
@@ -223,6 +282,16 @@ def demo():
         assert list(linkedin(f"{d}/Shares.csv")) == [("https://l/1", "so we launched today", None)]
         zipfile.ZipFile(f"{d}/twitter-2026.zip", "w").writestr("data/tweets.js", tweets)
         assert ("x", f"{d}/twitter-2026.zip") in find(d) and ("x", f"{d}/data") in find(d)
+        page = '<script type="application/ld+json">{"@type": "SocialMediaPosting", "text": "so we shipped it"}</script>'
+        assert _ld_text(page) == "so we shipped it"
+        page = '<script type="application/ld+json">{"@graph": [{"@type": "Article", "headline": "H", "articleBody": "body"}]}</script>'
+        assert _ld_text(page) == "H\n\nbody"
+        for profile in ["https://x.com/someone", "linkedin.com/in/someone"]:
+            try:
+                next(link(profile))
+                raise AssertionError(profile)
+            except ValueError:
+                pass
         out = f"{d}/samples"
         fake = lambda e: iter([("1", "hello world", None), ("2", "my key sk-proj-AbCdEf1234567890XyZ", None), ("3", "@bob hi", "reply")])
         sync([{"type": "x", "value": "archive"}], out, fake)
@@ -237,7 +306,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     add = sub.add_parser("add")
     add.add_argument("type", choices=sorted(DEFAULT_CHANNEL))
-    add.add_argument("value", help="username, handle, feed URL, or export file path")
+    add.add_argument("value", nargs="+", help="username, handle, feed URL, export file path, or post links")
     add.add_argument("--channel", help="samples folder to write into (default depends on type)")
     rm = sub.add_parser("remove")
     rm.add_argument("n", type=int, help="number from `list`")
@@ -252,12 +321,13 @@ def main():
     if a.cmd == "test":
         return demo()
     if a.cmd == "add":
-        entry = {"type": a.type, "value": a.value}
-        if a.channel:
-            entry["channel"] = a.channel
-        entries.append(entry)
+        new = [{"type": a.type, "value": v} for v in (a.value if a.type == "link" else a.value[:1])]
+        for e in new:
+            if a.channel:
+                e["channel"] = a.channel
+        entries += new
         save(entries)
-        sync([entry])
+        sync(new)
     elif a.cmd == "remove":
         print("removed", entries.pop(a.n - 1))
         save(entries)
