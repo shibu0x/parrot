@@ -29,9 +29,10 @@ Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<ch
 
 ### Pull in your socials
 
-The first `/writer profile` asks where you post and does this for you. By hand:
+The first `/writer profile` asks where you post and does this for you. Or just say it: `/writer set my profile, this is my writing https://medium.com/@you https://x.com/you/status/123`. By hand:
 
 ```bash
+python3 socials.py set https://medium.com/@you https://yourblog.dev   # any link or export file, type detected
 python3 socials.py add medium @you
 python3 socials.py add substack you
 python3 socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
