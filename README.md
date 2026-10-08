@@ -14,6 +14,12 @@ Reads history from: Claude Code, Codex, Gemini CLI, Qwen Code, GitHub Copilot CL
 ## Install
 
 ```bash
+npx skills add shibu0x/parrot -g
+```
+
+It asks which agents to add it to (Claude Code, Codex, Gemini CLI, Cursor, opencode and many more). Or without Node:
+
+```bash
 git clone https://github.com/shibu0x/parrot ~/parrot && ~/parrot/install.sh
 ```
 
