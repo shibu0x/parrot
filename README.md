@@ -1,4 +1,9 @@
-# parrot
+<p align="center">
+  <img src="assets/parrot.png" alt="parrot" width="260">
+</p>
+
+<h1 align="center">parrot</h1>
+
 
 A skill for terminal AI agents that learns how you write from your own messages to coding agents, then writes tweets, posts, emails and blogs in your voice.
 
@@ -40,6 +45,7 @@ Works with Medium, Substack, any blog with a feed, dev.to, Bluesky, single tweet
 ## Layout
 
 ```
+assets/parrot.png   logo
 SKILL.md            the skill: what the agent does for each /parrot command
 install.sh          links the skill into every agent on your machine
 agents/openai.yaml  Codex UI metadata
