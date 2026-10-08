@@ -29,6 +29,8 @@ Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<ch
 
 ### Pull in your socials
 
+The first `/writer profile` asks where you post and does this for you. By hand:
+
 ```bash
 python3 socials.py add medium @you
 python3 socials.py add substack you

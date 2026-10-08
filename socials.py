@@ -9,6 +9,8 @@
   python3 socials.py add x ~/Downloads/twitter-archive.zip   # tweet + reply channels
   python3 socials.py add linkedin ~/Downloads/Basic_LinkedInDataExport.zip
   python3 socials.py list | remove <n> | sync
+  python3 socials.py find    # X / LinkedIn exports in ~/Downloads
+  python3 socials.py skip    # user wants none; socials.json exists = already asked
 
 Add only accounts that belong to the user. `--channel NAME` on `add` overrides the default channel.
 """
@@ -170,6 +172,28 @@ def sync(entries, base=SAMPLES, reader=read):
         print(f"{entry['type']} {entry['value']}: {len(pieces)} found, {new} new")
 
 
+def _contains(path, names):
+    if zipfile.is_zipfile(path):
+        return any(os.path.basename(n) in names for n in zipfile.ZipFile(path).namelist())
+    return os.path.isdir(path) and any(f in names for _, _, fs in os.walk(path) for f in fs)
+
+
+def find(downloads="~/Downloads"):
+    """X and LinkedIn exports already sitting in Downloads, so the user doesn't have to type a path."""
+    d = os.path.expanduser(downloads)
+    hits = []
+    for name in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        f = os.path.join(d, name)
+        try:
+            if _contains(f, {"tweets.js", "tweet.js"}):
+                hits.append(("x", f))
+            elif _contains(f, {"Shares.csv"}):
+                hits.append(("linkedin", f))
+        except (OSError, zipfile.BadZipFile):
+            continue
+    return hits
+
+
 def load():
     return json.load(open(CONFIG)) if os.path.exists(CONFIG) else []
 
@@ -197,6 +221,8 @@ def demo():
         assert list(x_archive(d)) == [("1", "shipped it & it works", None), ("3", "@bob yeah agreed", "reply")]
         open(f"{d}/Shares.csv", "w").write('Date,ShareLink,ShareCommentary\n2026-01-01,https://l/1,"so we launched today"\n')
         assert list(linkedin(f"{d}/Shares.csv")) == [("https://l/1", "so we launched today", None)]
+        zipfile.ZipFile(f"{d}/twitter-2026.zip", "w").writestr("data/tweets.js", tweets)
+        assert ("x", f"{d}/twitter-2026.zip") in find(d) and ("x", f"{d}/data") in find(d)
         out = f"{d}/samples"
         fake = lambda e: iter([("1", "hello world", None), ("2", "my key sk-proj-AbCdEf1234567890XyZ", None), ("3", "@bob hi", "reply")])
         sync([{"type": "x", "value": "archive"}], out, fake)
@@ -217,6 +243,8 @@ def main():
     rm.add_argument("n", type=int, help="number from `list`")
     sub.add_parser("list")
     sub.add_parser("sync")
+    sub.add_parser("find", help="look for X / LinkedIn exports in ~/Downloads")
+    sub.add_parser("skip", help="remember the user wants no socials, so they aren't asked again")
     sub.add_parser("test")
     a = ap.parse_args()
 
@@ -240,6 +268,12 @@ def main():
             print("no socials yet, see: python3 socials.py --help")
     elif a.cmd == "sync":
         sync(entries)
+    elif a.cmd == "find":
+        for kind, f in find():
+            print(f"{kind} {f}")
+    elif a.cmd == "skip":
+        save(entries)
+        print("saved, won't ask again")
 
 
 if __name__ == "__main__":

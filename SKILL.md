@@ -30,7 +30,7 @@ python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py
 
 The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
 
-Then sync their socials if any are set up (`python3 <skill-dir>/socials.py list`, then `sync`). If none are set up and this is the first profile, offer once: "want me to learn from your Medium, X, Substack...? see /writer socials".
+Then socials. If `~/.writer/socials.json` doesn't exist, the user was never asked: run the Socials interview (section 5) now, before building. If it exists, just run `python3 <skill-dir>/socials.py sync` to pick up new posts.
 
 Then check for real writing the user saved, one folder per channel in `~/.writer/samples/` (`tweet/`, `email/`, `linkedin/`, `blog/`, any name works; one piece per file or several split by a `---` line):
 
@@ -159,8 +159,18 @@ At most 5 points, worst first, each quoting the exact words. If it already sound
 
 Real public writing beats chat by far. `socials.py` downloads the user's own posts into `~/.writer/samples/<channel>/`, where everything above already picks them up.
 
-1. Ask which platforms they post on, and their username or file for each.
-2. Add each one (this also downloads it):
+The user never runs commands here. You ask, you run. Use your ask-the-user tool if you have one (multiple choice, multi-select); otherwise ask in plain chat.
+
+1. Ask: "Where do you post? I'll learn from your real writing." Options: Medium, X / Twitter, Substack, LinkedIn, Bluesky, dev.to, Other blog (RSS), None.
+   - None: run `python3 <skill-dir>/socials.py skip` (so they're never asked again) and continue.
+2. In one follow-up message, ask for each picked platform's username or URL (Medium @handle, Substack name or domain, Bluesky handle, dev.to username, blog feed URL). Not for X or LinkedIn, see step 3.
+3. X and LinkedIn can't be read from the web (paid API, no API). Run `python3 <skill-dir>/socials.py find` first: it looks in `~/Downloads` for their exports.
+   - Found one: ask "found your X archive at <path>, use it?" and add it if yes.
+   - Not found: give the steps and move on, don't block:
+     - X: Settings → Your account → Download an archive of your data. It arrives by email in about a day.
+     - LinkedIn: Settings → Data privacy → Get a copy of your data → Posts.
+     Then: "when it's in your Downloads, run /writer socials and I'll pick it up."
+4. Add each one yourself (this also downloads it) and tell them what came in ("Medium: 10 posts, Bluesky: 77"):
 
 ```bash
 python3 <skill-dir>/socials.py add medium @user          # blog
@@ -172,12 +182,8 @@ python3 <skill-dir>/socials.py add x <archive.zip>       # tweet, replies -> rep
 python3 <skill-dir>/socials.py add linkedin <export.zip> # linkedin
 ```
 
-`--channel NAME` puts a source in a different folder. `list`, `remove <n>` and `sync` manage them.
-
-3. X and LinkedIn can't be read from the web (paid API, no API), so the user downloads their own data once:
-   - X: Settings → Your account → Download an archive of your data. They get an email in about a day, then pass the zip.
-   - LinkedIn: Settings → Data privacy → Get a copy of your data → Posts. Pass the zip or `Shares.csv`.
-4. Rebuild the profile afterwards so the Channels section uses the new samples.
+   If one fails (wrong username, private feed), say which and ask for the right one once.
+5. If this was run on its own (`/writer socials`), rebuild the profile afterwards so the Channels section uses the new samples. `list`, `remove <n>`, `sync` manage sources later; `--channel NAME` on `add` uses a different folder.
 
 Only add accounts that belong to the user. If they ask to learn someone else's account ("write like Paul Graham"), say this skill learns their own voice only and don't fetch it. Writing as a real other person is impersonation.
 
