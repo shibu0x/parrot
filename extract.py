@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Print the user's own messages from local Claude Code + Codex transcripts, newest first."""
+"""Print the user's own messages from local terminal AI agent transcripts, newest first."""
 import argparse, glob, json, os, re
 
 HOME = os.path.expanduser("~")
@@ -24,49 +24,132 @@ def scrub(text):
     return text
 
 
-def claude():
-    for f in glob.glob(f"{HOME}/.claude/projects/*/*.jsonl"):
-        for line in open(f, errors="ignore"):
-            try:
-                d = json.loads(line)
-            except ValueError:
-                continue
-            if d.get("type") != "user" or d.get("isMeta") or d.get("isSidechain"):
-                continue
-            c = d.get("message", {}).get("content")
-            if isinstance(c, list):  # tool results are not the user's writing
-                c = "\n".join(x.get("text", "") for x in c if x.get("type") == "text")
-            if c:
-                yield d.get("timestamp", ""), c
+# Where each terminal agent keeps its transcripts. Most store user turns as JSON
+# records, so one generic reader (user_text) handles all of them.
+SOURCES = {
+    "claude": ["~/.claude/projects/*/*.jsonl"],
+    "codex": ["~/.codex/sessions/**/*.jsonl"],
+    "gemini": ["~/.gemini/tmp/*/chats/*.json", "~/.gemini/tmp/*/logs.json"],
+    "qwen": ["~/.qwen/tmp/*/chats/*.json", "~/.qwen/tmp/*/logs.json", "~/.qwen/projects/*/chats/*.jsonl"],
+    "copilot": ["~/.copilot/session-state/**/*.jsonl"],
+    "kiro": ["~/.kiro/sessions/**/*.jsonl"],
+    "factory": ["~/.factory/sessions/**/*.jsonl"],
+    "opencode": ["~/.local/share/opencode/storage/message/*/*.json"],
+    "aider": ["~/*/.aider.input.history", "~/*/*/.aider.input.history", "~/*/*/*/.aider.input.history"],
+}
 
 
-def codex():
-    for f in glob.glob(f"{HOME}/.codex/sessions/**/*.jsonl", recursive=True):
+def texts(c):
+    """Text of a message body: a string, or a list of text parts in any agent's shape."""
+    if isinstance(c, str):
+        return c
+    if isinstance(c, list):
+        out = []
+        for x in c:
+            if isinstance(x, str):
+                out.append(x)
+            elif isinstance(x, dict) and (x.get("type") or x.get("kind") or "text") == "text":
+                t = x.get("text", x.get("data"))
+                if isinstance(t, str):
+                    out.append(t)
+        return "\n".join(out)
+    return ""
+
+
+def user_text(d):
+    """The user's text if this JSON record is a user turn, else ''. Tool results come out empty."""
+    if not isinstance(d, dict) or d.get("isMeta") or d.get("isSidechain"):
+        return ""
+    if d.get("role") == "user":
+        return texts(d.get("content"))
+    if d.get("type") in ("user", "user_message", "user.message") or d.get("kind") == "Prompt":
+        for k in ("message", "content", "data"):
+            v = d.get(k)
+            if isinstance(v, dict):
+                v = v.get("content", v.get("message"))
+            t = texts(v)
+            if t:
+                return t
+        return ""
+    for k in ("payload", "message"):  # codex / factory wrap the turn one level down
+        if isinstance(d.get(k), dict):
+            return user_text(d[k])
+    return ""
+
+
+def opencode_text(f, d):
+    # message json has no text; it lives in storage/part/<messageID>/*.json
+    parts = glob.glob(os.path.join(f.split("/storage/")[0], "storage/part", d.get("id", "-"), "*.json"))
+    return "\n".join(texts([json.load(open(p))]) for p in sorted(parts))
+
+
+def aider(f):
+    # "# 2024-.. timestamp" starts an entry, "+line" lines are what the user typed
+    entry = []
+    for line in open(f, errors="ignore"):
+        if line.startswith("#") and entry:
+            yield "\n".join(entry)
+            entry = []
+        elif line.startswith("+"):
+            entry.append(line[1:].rstrip("\n"))
+    if entry:
+        yield "\n".join(entry)
+
+
+def read(name, f):
+    if name == "aider":
+        yield from aider(f)
+        return
+    if f.endswith(".jsonl"):
+        records = []
         for line in open(f, errors="ignore"):
             try:
-                d = json.loads(line)
+                records.append(json.loads(line))
             except ValueError:
-                continue
-            p = d.get("payload") or {}
-            if d.get("type") == "event_msg" and p.get("type") == "user_message":
-                yield d.get("timestamp", ""), p.get("message", "")
+                pass
+    else:
+        try:
+            d = json.load(open(f, errors="ignore"))
+        except ValueError:
+            return
+        records = d if isinstance(d, list) else d.get("messages", [d]) if isinstance(d, dict) else []
+    for d in records:
+        if name == "opencode":
+            yield opencode_text(f, d) if isinstance(d, dict) and d.get("role") == "user" else ""
+        else:
+            yield user_text(d)
+
+
+def collect(names):
+    """(sort key, text) for every user message; newest file last, file order within."""
+    for name in names:
+        for pat in SOURCES[name]:
+            for f in glob.glob(os.path.expanduser(pat), recursive=True):
+                mtime = os.path.getmtime(f)
+                for i, t in enumerate(read(name, f)):
+                    if t:
+                        yield (mtime, i), t
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--source", choices=["claude", "codex", "all"], default="all")
+    ap.add_argument("--source", default="all", help="all, or comma list of: " + ", ".join(SOURCES))
     ap.add_argument("--limit", type=int, default=400)
     ap.add_argument("--max-chars", type=int, default=1500, help="longer = probably a paste, not your writing")
+    ap.add_argument("--list", action="store_true", help="show how many messages each agent has")
     a = ap.parse_args()
 
-    msgs = []
-    if a.source in ("claude", "all"):
-        msgs += claude()
-    if a.source in ("codex", "all"):
-        msgs += codex()
+    names = list(SOURCES) if a.source == "all" else a.source.split(",")
+    bad = set(names) - set(SOURCES)
+    if bad:
+        ap.error(f"unknown source {', '.join(bad)}; pick from {', '.join(SOURCES)}")
+    if a.list:
+        for n in SOURCES:
+            print(f"{n}: {sum(1 for _ in collect([n]))}")
+        return
 
     seen, out = set(), []
-    for ts, m in sorted(msgs, key=lambda x: x[0], reverse=True):
+    for _, m in sorted(collect(names), key=lambda x: x[0], reverse=True):
         m = TAGS.sub("", m).strip()
         if len(m) < 3 or len(m) > a.max_chars or SKIP.match(m) or m.startswith("/") or m in seen:
             continue
@@ -92,9 +175,29 @@ def demo():
         assert leak not in scrub(raw), (raw, scrub(raw))
     for path in ["see https://github.com/org/repo/blob/0123456789abcdef0123456789abcdef01234567/x.rs", "/Users/me/hoist-cli-0123456789abcdef0123456789abcdef/x"]:
         assert scrub(path) == path, scrub(path)
+    shapes = [
+        {"type": "user", "message": {"role": "user", "content": "claude str"}},
+        {"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": "claude list"}]}},
+        {"type": "event_msg", "payload": {"type": "user_message", "message": "codex"}},
+        {"type": "user", "content": [{"text": "gemini parts"}]},
+        {"type": "user", "message": "gemini log"},
+        {"type": "user.message", "data": {"content": "copilot"}},
+        {"kind": "Prompt", "data": {"content": [{"kind": "text", "data": "kiro"}]}},
+        {"type": "message", "message": {"role": "user", "content": [{"type": "text", "text": "factory"}]}},
+    ]
+    for d in shapes:
+        assert user_text(d), d
+    not_user = [
+        {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "content": "x"}]}},
+        {"type": "assistant", "message": {"role": "assistant", "content": "hi"}},
+        {"type": "user", "isMeta": True, "message": {"content": "meta"}},
+        {"kind": "AssistantMessage", "data": {"content": [{"kind": "text", "data": "x"}]}},
+    ]
+    for d in not_user:
+        assert not user_text(d), d
     keep = "bro why you created new fiolder bro, it is running ?"
     assert scrub(keep) == keep
-    print("scrub ok")
+    print("extract ok")
 
 
 if __name__ == "__main__":

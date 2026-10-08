@@ -1,11 +1,12 @@
 ---
 name: writer
-description: Writes tweets, posts, emails, blogs, replies in the USER'S OWN voice, learned from their past messages to Claude Code and Codex. Use when the user runs /writer, or says "write this like me", "in my voice", "how I would write it". `/writer profile` builds or shows their style profile; `/writer <type> <topic>` drafts content.
+description: Writes tweets, posts, emails, blogs, replies in the USER'S OWN voice, learned from their past messages to terminal AI agents (Claude Code, Codex, Gemini CLI, Qwen Code, Copilot CLI, Kiro, Factory Droid, opencode, Aider). Use when the user runs /writer, or says "write this like me", "in my voice", "how I would write it". `/writer profile` builds or shows their style profile; `/writer <type> <topic>` drafts content.
 ---
 
 # writer
 
 Learn how the user writes from their own messages to coding agents, then write in that voice.
+`<skill-dir>` below is the folder containing this SKILL.md (usually `~/.agents/skills/writer` or `~/.claude/skills/writer`).
 Profile lives at `~/.writer/profile.md`. Raw messages never leave the machine except as the context you already have.
 
 ## Commands
@@ -18,11 +19,11 @@ Profile lives at `~/.writer/profile.md`. Raw messages never leave the machine ex
 Run both:
 
 ```bash
-python3 ~/.claude/skills/writer/extract.py --limit 400
-python3 ~/.claude/skills/writer/extract.py --limit 400 | python3 ~/.claude/skills/writer/stats.py
+python3 <skill-dir>/extract.py --limit 400
+python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py
 ```
 
-The first prints the user's own messages (`--source claude|codex` to restrict; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
+The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
 
 Use the numbers from `stats.py` for Mechanics; don't estimate what was counted. Read the messages yourself for Voice and Samples. Write `~/.writer/profile.md`:
 
@@ -62,7 +63,7 @@ Then show the profile to the user in a compact form.
 3. Write 3 different drafts.
 4. Get the mechanics score for each draft by counting, not judging:
    ```bash
-   python3 ~/.claude/skills/writer/extract.py --limit 400 | python3 ~/.claude/skills/writer/stats.py --draft "<draft>"
+   python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py --draft "<draft>"
    ```
    It prints a mechanics match % and the habits the draft gets most wrong. Then score the rest yourself (0-100): vocabulary, sentence rhythm, tone, and "would they actually send this". Penalize anything that smells like AI: "delve", "excited to announce", "game-changer", tidy rule-of-three lists, em dashes if the user doesn't use them, emoji the user doesn't use, hashtag soup.
 5. If the best scores under 85, rewrite it and score again (max 2 rounds).
