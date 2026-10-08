@@ -9,6 +9,7 @@
   python3 socials.py add x ~/Downloads/twitter-archive.zip   # tweet + reply channels
   python3 socials.py add linkedin ~/Downloads/Basic_LinkedInDataExport.zip
   python3 socials.py add link <url> [<url> ...]  # single tweets, LinkedIn posts, Medium/blog articles
+  python3 socials.py set <anything> ...          # profile/post links, feeds, export files: type is detected
   python3 socials.py list | remove <n> | sync
   python3 socials.py find    # X / LinkedIn exports in ~/Downloads
   python3 socials.py skip    # user wants none; socials.json exists = already asked
@@ -209,7 +210,9 @@ def read(entry):
 
 
 def sync(entries, base=SAMPLES, reader=read):
-    """Write new pieces to <base>/<channel>/<type>-<hash>.txt. Existing files are left alone, so re-runs only add."""
+    """Write new pieces to <base>/<channel>/<type>-<hash>.txt. Existing files are left alone, so re-runs only add.
+    Returns the entries that worked, so callers only save sources that can actually be read."""
+    ok = []
     for entry in entries:
         new = 0
         try:
@@ -217,6 +220,7 @@ def sync(entries, base=SAMPLES, reader=read):
         except Exception as e:  # one dead feed shouldn't stop the rest
             print(f"{entry['type']} {entry['value']}: failed ({e})")
             continue
+        ok.append(entry)
         for pid, text, channel in pieces:
             text = scrub(text.strip())
             if len(text) < 3:
@@ -228,12 +232,47 @@ def sync(entries, base=SAMPLES, reader=read):
                 open(f, "w").write(text)
                 new += 1
         print(f"{entry['type']} {entry['value']}: {len(pieces)} found, {new} new")
+    return ok
 
 
 def _contains(path, names):
     if zipfile.is_zipfile(path):
         return any(os.path.basename(n) in names for n in zipfile.ZipFile(path).namelist())
     return os.path.isdir(path) and any(f in names for _, _, fs in os.walk(path) for f in fs)
+
+
+def classify(item, getter=None):
+    """Turn whatever the user pasted (profile link, post link, feed, export file, handle) into a source entry."""
+    path = os.path.expanduser(item)
+    if os.path.exists(path):
+        if _contains(path, {"tweets.js", "tweet.js"}) or path.endswith(("tweets.js", "tweet.js")):
+            return {"type": "x", "value": path}
+        if _contains(path, {"Shares.csv"}) or path.endswith("Shares.csv"):
+            return {"type": "linkedin", "value": path}
+        raise ValueError(f"{item}: not an X archive or LinkedIn export")
+    u = urllib.parse.urlparse(item if "://" in item else "https://" + item)
+    host = u.netloc.lower().removeprefix("www.")
+    parts = [p for p in u.path.split("/") if p]
+    if host == "medium.com" and len(parts) == 1 and parts[0].startswith("@"):
+        return {"type": "medium", "value": parts[0]}
+    if host.endswith(".medium.com") and not parts:
+        return {"type": "medium", "value": "@" + host.split(".")[0]}
+    if host.endswith(".substack.com") and not parts:
+        return {"type": "substack", "value": host.split(".")[0]}
+    if host == "bsky.app" and len(parts) >= 2 and parts[0] == "profile":
+        return {"type": "bluesky", "value": parts[1]}
+    if host == "dev.to" and len(parts) == 1:
+        return {"type": "devto", "value": parts[0]}
+    if re.search(r"(\.xml|/feed|/rss|/atom)/?$", u.path):
+        return {"type": "rss", "value": item}
+    if not parts and host not in ("x.com", "twitter.com", "linkedin.com"):
+        # a blog's home page: use its feed if it advertises one, so we get every post
+        page = (getter or get)(f"https://{host}/").decode("utf-8", "ignore")
+        m = re.search(r'<link[^>]+type="application/(?:rss|atom)\+xml"[^>]*>', page)
+        href = m and re.search(r'href="([^"]+)"', m.group(0))
+        if href:
+            return {"type": "rss", "value": urllib.parse.urljoin(f"https://{host}/", html.unescape(href.group(1)))}
+    return {"type": "link", "value": item}
 
 
 def find(downloads="~/Downloads"):
@@ -292,10 +331,26 @@ def demo():
                 raise AssertionError(profile)
             except ValueError:
                 pass
+        cases = {
+            "https://medium.com/@shibu0x": ("medium", "@shibu0x"), "shibu0x.medium.com": ("medium", "@shibu0x"),
+            "https://medium.com/@shibu0x/some-post-5ef44ce67a1e": ("link", None), "noahpinion.substack.com": ("substack", "noahpinion"),
+            "https://you.substack.com/p/a-post": ("link", None), "https://bsky.app/profile/jay.bsky.team": ("bluesky", "jay.bsky.team"),
+            "https://dev.to/ben": ("devto", "ben"), "https://dev.to/ben/a-post-12": ("link", None),
+            "https://site.dev/feed.xml": ("rss", None), "https://x.com/jack/status/20": ("link", None),
+            "https://x.com/jack": ("link", None), f"{d}/twitter-2026.zip": ("x", None),
+        }
+        for item, (kind, value) in cases.items():
+            e = classify(item, getter=lambda u: b"")
+            assert e["type"] == kind and (value is None or e["value"] == value), (item, e)
+        home = b'<link rel="alternate" type="application/rss+xml" href="/index.xml">'
+        assert classify("https://myblog.dev", getter=lambda u: home) == {"type": "rss", "value": "https://myblog.dev/index.xml"}
         out = f"{d}/samples"
         fake = lambda e: iter([("1", "hello world", None), ("2", "my key sk-proj-AbCdEf1234567890XyZ", None), ("3", "@bob hi", "reply")])
         sync([{"type": "x", "value": "archive"}], out, fake)
-        sync([{"type": "x", "value": "archive"}], out, fake)  # re-run adds nothing
+        assert sync([{"type": "x", "value": "archive"}], out, fake) == [{"type": "x", "value": "archive"}]  # re-run adds nothing
+        def broken(e):
+            raise ValueError("needs a login")
+        assert sync([{"type": "link", "value": "https://x.com/jack"}], out, broken) == []
         assert sorted(os.listdir(out)) == ["reply", "tweet"] and len(os.listdir(f"{out}/tweet")) == 2
         assert "sk-proj" not in "".join(open(f"{out}/tweet/{f}").read() for f in os.listdir(f"{out}/tweet"))
     print("socials ok")
@@ -310,6 +365,8 @@ def main():
     add.add_argument("--channel", help="samples folder to write into (default depends on type)")
     rm = sub.add_parser("remove")
     rm.add_argument("n", type=int, help="number from `list`")
+    st = sub.add_parser("set", help="add anything the user pastes: profile or post links, feeds, export files")
+    st.add_argument("items", nargs="+")
     sub.add_parser("list")
     sub.add_parser("sync")
     sub.add_parser("find", help="look for X / LinkedIn exports in ~/Downloads")
@@ -325,9 +382,20 @@ def main():
         for e in new:
             if a.channel:
                 e["channel"] = a.channel
-        entries += new
-        save(entries)
-        sync(new)
+        save(entries + sync(new))
+    elif a.cmd == "set":
+        new = []
+        for item in a.items:
+            try:
+                e = classify(item)
+            except Exception as err:
+                print(f"{item}: {err}")
+                continue
+            if e in entries + new:
+                print(f"{e['type']} {e['value']}: already added")
+            else:
+                new.append(e)
+        save(entries + sync(new))
     elif a.cmd == "remove":
         print("removed", entries.pop(a.n - 1))
         save(entries)
