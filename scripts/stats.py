@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Count writing habits in extract.py output, and score a draft's mechanics against them.
 
-  python3 extract.py | python3 stats.py                 # habits of your messages
-  python3 extract.py | python3 stats.py --draft "text"  # mechanics match of a draft
+  python3 scripts/extract.py | python3 stats.py                 # habits of your messages
+  python3 scripts/extract.py | python3 stats.py --draft "text"  # mechanics match of a draft
 """
 import argparse, collections, re, statistics, sys
 

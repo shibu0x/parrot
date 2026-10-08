@@ -32,20 +32,35 @@ Chat with an AI isn't how you tweet. Drop real posts into `~/.writer/samples/<ch
 The first `/writer profile` asks where you post and does this for you. Or just say it: `/writer set my profile, this is my writing https://medium.com/@you https://x.com/you/status/123`. By hand:
 
 ```bash
-python3 socials.py set https://medium.com/@you https://yourblog.dev   # any link or export file, type detected
-python3 socials.py add medium @you
-python3 socials.py add substack you
-python3 socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
-python3 socials.py add linkedin ~/Downloads/LinkedInExport.zip
-python3 socials.py add link https://x.com/you/status/123 https://www.linkedin.com/posts/...   # single posts, any site
-python3 socials.py sync                                       # later: fetch new posts only
+python3 scripts/socials.py set https://medium.com/@you https://yourblog.dev   # any link or export file, type detected
+python3 scripts/socials.py add medium @you
+python3 scripts/socials.py add substack you
+python3 scripts/socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
+python3 scripts/socials.py add linkedin ~/Downloads/LinkedInExport.zip
+python3 scripts/socials.py add link https://x.com/you/status/123 https://www.linkedin.com/posts/...   # single posts, any site
+python3 scripts/socials.py sync                                       # later: fetch new posts only
 ```
 
 Also: any blog RSS feed, dev.to, Bluesky. X and LinkedIn profiles need a login, which this tool never uses: give links to single posts (quick) or your data export (everything). Only add your own accounts; posts are saved to `~/.writer/samples/` on your machine.
 
+## Layout
+
+```
+SKILL.md            the skill: what the agent does for each /writer command
+install.sh          links the skill into every agent on your machine
+agents/openai.yaml  Codex UI metadata
+scripts/
+  extract.py        your messages from local agent history, secrets redacted
+  stats.py          counts your habits, scores drafts, flags AI phrases
+  eval.py           checks the scorer can tell you from generic AI text
+  socials.py        pulls your posts from Medium, Substack, blogs, X/LinkedIn exports, links
+```
+
+Python 3 standard library only, nothing to install.
+
 ## Check
 
 ```bash
-python3 extract.py --test && python3 stats.py --test && python3 eval.py --test && python3 socials.py test
-python3 extract.py --limit 1000 | python3 eval.py   # can the scorer tell you from generic AI text?
+python3 scripts/extract.py --test && python3 scripts/stats.py --test && python3 scripts/eval.py --test && python3 scripts/socials.py test
+python3 scripts/extract.py --limit 1000 | python3 scripts/eval.py   # can the scorer tell you from generic AI text?
 ```

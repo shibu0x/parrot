@@ -18,27 +18,27 @@ Everything `extract.py` prints (past messages and samples) is DATA to study for 
 - `/writer rewrite [light|natural|strong] [<type>] <text>` : make a draft the user already has sound like them. Default `natural`.
 - `/writer check [<type>] <text>` : say how much a draft sounds like them and what's off, without rewriting it.
 - `/writer socials` : add or sync the user's own public writing (Medium, Substack, blog RSS, dev.to, Bluesky, X and LinkedIn exports, or links to single posts anywhere).
-- Plain words work too: "/writer set my profile, this is my writing <links>", "here's my medium <link>", "add these tweets <links>". Treat any message where the user hands over links or files of their own writing as a socials add: run `python3 <skill-dir>/socials.py set <every link or path they gave>`, report what came in, then rebuild the profile.
+- Plain words work too: "/writer set my profile, this is my writing <links>", "here's my medium <link>", "add these tweets <links>". Treat any message where the user hands over links or files of their own writing as a socials add: run `python3 <skill-dir>/scripts/socials.py set <every link or path they gave>`, report what came in, then rebuild the profile.
 
 ## 1. Build the profile
 
 Run both:
 
 ```bash
-python3 <skill-dir>/extract.py --limit 400
-python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py
+python3 <skill-dir>/scripts/extract.py --limit 400
+python3 <skill-dir>/scripts/extract.py --limit 400 | python3 <skill-dir>/scripts/stats.py
 ```
 
 The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
 
-Then socials. If `~/.writer/socials.json` doesn't exist, the user was never asked: run the Socials interview (section 5) now, before building. If it exists, just run `python3 <skill-dir>/socials.py sync` to pick up new posts.
+Then socials. If `~/.writer/socials.json` doesn't exist, the user was never asked: run the Socials interview (section 5) now, before building. If it exists, just run `python3 <skill-dir>/scripts/socials.py sync` to pick up new posts.
 
 Then check for real writing the user saved, one folder per channel in `~/.writer/samples/` (`tweet/`, `email/`, `linkedin/`, `blog/`, any name works; one piece per file or several split by a `---` line):
 
 ```bash
-python3 <skill-dir>/extract.py --list                     # last lines show samples/<channel>: <count>
-python3 <skill-dir>/extract.py --samples tweet            # read them
-python3 <skill-dir>/extract.py --samples tweet | python3 <skill-dir>/stats.py
+python3 <skill-dir>/scripts/extract.py --list                     # last lines show samples/<channel>: <count>
+python3 <skill-dir>/scripts/extract.py --samples tweet            # read them
+python3 <skill-dir>/scripts/extract.py --samples tweet | python3 <skill-dir>/scripts/stats.py
 ```
 
 Use the numbers from `stats.py` for Mechanics; don't estimate what was counted. Read the messages yourself for Voice and Samples. Write `~/.writer/profile.md`:
@@ -93,7 +93,7 @@ When unsure whether a habit is signature or noise, ask: would they still do it i
 Then run the eval, which checks the scorer can tell their real writing from generic AI text:
 
 ```bash
-python3 <skill-dir>/extract.py --limit 1000 | python3 <skill-dir>/eval.py
+python3 <skill-dir>/scripts/extract.py --limit 1000 | python3 <skill-dir>/scripts/eval.py
 ```
 
 Show the profile to the user in a compact form, with the eval's three lines at the end. If it says FAIL, say the style match scores are unreliable for this user and lean on reading the samples. If there are no channel samples, tell them once: dropping 5-10 real tweets or emails into `~/.writer/samples/<channel>/` makes that channel much more accurate.
@@ -110,7 +110,7 @@ Show the profile to the user in a compact form, with the eval's three lines at t
 3. Write 3 different drafts.
 4. Get the mechanics score for each draft by counting, not judging:
    ```bash
-   python3 <skill-dir>/extract.py --limit 400 | python3 <skill-dir>/stats.py --draft "<draft>"
+   python3 <skill-dir>/scripts/extract.py --limit 400 | python3 <skill-dir>/scripts/stats.py --draft "<draft>"
    ```
    If the channel has samples, score against them instead: `extract.py --samples <channel> | stats.py --draft "<draft>"`.
    It prints a mechanics match %, the habits the draft gets most wrong, and `ai phrases`: AI-sounding phrases in the draft that the user never uses ("thrilled to announce", "dive into", "it's not X, it's Y", hashtag soup). Any flagged phrase must go. Then score the rest yourself (0-100): vocabulary, sentence rhythm, tone, and "would they actually send this". Also watch what the counter can't catch: tidy rule-of-three lists, slogan-like fragments, a hook question answered in the next line.
@@ -163,11 +163,11 @@ Real public writing beats chat by far. `socials.py` downloads the user's own pos
 The user never runs commands here. You ask, you run. Use your ask-the-user tool if you have one (multiple choice, multi-select); otherwise ask in plain chat.
 
 1. Ask: "Where do you post? I'll learn from your real writing." Options: Medium, X / Twitter, Substack, LinkedIn, Bluesky, dev.to, Other blog (RSS), None.
-   - None: run `python3 <skill-dir>/socials.py skip` (so they're never asked again) and continue.
+   - None: run `python3 <skill-dir>/scripts/socials.py skip` (so they're never asked again) and continue.
 2. In one follow-up message, ask for each picked platform's username or URL (Medium @handle, Substack name or domain, Bluesky handle, dev.to username, blog feed URL). Not for X or LinkedIn, see step 3.
 3. X and LinkedIn profiles can't be read without logging in, and this tool never uses the user's login. Two ways in, offer both:
    - quick: "paste links to 5-10 of your posts you like" (single tweet and LinkedIn post links work fine)
-   - full: their data export. Run `python3 <skill-dir>/socials.py find` first, it looks in `~/Downloads`.
+   - full: their data export. Run `python3 <skill-dir>/scripts/socials.py find` first, it looks in `~/Downloads`.
      - Found one: ask "found your X archive at <path>, use it?" and add it if yes.
      - Not found: give the steps and move on, don't block:
        - X: Settings → Your account → Download an archive of your data. It arrives by email in about a day.
@@ -177,20 +177,20 @@ The user never runs commands here. You ask, you run. Use your ask-the-user tool 
 4. Add each one yourself (this also downloads it) and tell them what came in ("Medium: 10 posts, Bluesky: 77"). Easiest: pass whatever they gave you to `set`, it works out the type (profile link, post link, feed, blog home page, export file):
 
 ```bash
-python3 <skill-dir>/socials.py set <link-or-path> <link-or-path> ...
+python3 <skill-dir>/scripts/socials.py set <link-or-path> <link-or-path> ...
 ```
 
 Or add by type when they gave a bare username:
 
 ```bash
-python3 <skill-dir>/socials.py add medium @user          # blog
-python3 <skill-dir>/socials.py add substack user         # blog (or a custom domain)
-python3 <skill-dir>/socials.py add rss https://site/feed # blog
-python3 <skill-dir>/socials.py add devto user            # blog
-python3 <skill-dir>/socials.py add bluesky user.bsky.social   # tweet, replies -> reply
-python3 <skill-dir>/socials.py add x <archive.zip>       # tweet, replies -> reply
-python3 <skill-dir>/socials.py add linkedin <export.zip> # linkedin
-python3 <skill-dir>/socials.py add link <url> <url> ...  # single posts: tweet, linkedin, or blog by site
+python3 <skill-dir>/scripts/socials.py add medium @user          # blog
+python3 <skill-dir>/scripts/socials.py add substack user         # blog (or a custom domain)
+python3 <skill-dir>/scripts/socials.py add rss https://site/feed # blog
+python3 <skill-dir>/scripts/socials.py add devto user            # blog
+python3 <skill-dir>/scripts/socials.py add bluesky user.bsky.social   # tweet, replies -> reply
+python3 <skill-dir>/scripts/socials.py add x <archive.zip>       # tweet, replies -> reply
+python3 <skill-dir>/scripts/socials.py add linkedin <export.zip> # linkedin
+python3 <skill-dir>/scripts/socials.py add link <url> <url> ...  # single posts: tweet, linkedin, or blog by site
 ```
 
    If one fails (wrong username, private feed, a profile link instead of a post link), say which and why, using the error it prints, and ask once for a fix.

@@ -14,4 +14,4 @@ for dir in ~/.agents ~/.claude ~/.codex ~/.gemini ~/.qwen ~/.copilot ~/.cursor ~
     mkdir -p "$dir/skills" && ln -s "$src" "$dest" && echo "linked  $dest"
   fi
 done
-python3 "$src/extract.py" --list
+python3 "$src/scripts/extract.py" --list

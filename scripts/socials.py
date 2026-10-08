@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Pull the user's own public writing into ~/.writer/samples/<channel>/ so it outranks chat habits.
 
-  python3 socials.py add medium @you            # blog channel
-  python3 socials.py add substack you           # you.substack.com, blog channel
-  python3 socials.py add rss https://you.dev/feed.xml
-  python3 socials.py add devto you
-  python3 socials.py add bluesky you.bsky.social   # tweet channel
-  python3 socials.py add x ~/Downloads/twitter-archive.zip   # tweet + reply channels
-  python3 socials.py add linkedin ~/Downloads/Basic_LinkedInDataExport.zip
-  python3 socials.py add link <url> [<url> ...]  # single tweets, LinkedIn posts, Medium/blog articles
-  python3 socials.py set <anything> ...          # profile/post links, feeds, export files: type is detected
-  python3 socials.py list | remove <n> | sync
-  python3 socials.py find    # X / LinkedIn exports in ~/Downloads
-  python3 socials.py skip    # user wants none; socials.json exists = already asked
+  python3 scripts/socials.py add medium @you            # blog channel
+  python3 scripts/socials.py add substack you           # you.substack.com, blog channel
+  python3 scripts/socials.py add rss https://you.dev/feed.xml
+  python3 scripts/socials.py add devto you
+  python3 scripts/socials.py add bluesky you.bsky.social   # tweet channel
+  python3 scripts/socials.py add x ~/Downloads/twitter-archive.zip   # tweet + reply channels
+  python3 scripts/socials.py add linkedin ~/Downloads/Basic_LinkedInDataExport.zip
+  python3 scripts/socials.py add link <url> [<url> ...]  # single tweets, LinkedIn posts, Medium/blog articles
+  python3 scripts/socials.py set <anything> ...          # profile/post links, feeds, export files: type is detected
+  python3 scripts/socials.py list | remove <n> | sync
+  python3 scripts/socials.py find    # X / LinkedIn exports in ~/Downloads
+  python3 scripts/socials.py skip    # user wants none; socials.json exists = already asked
 
 Add only accounts that belong to the user. `--channel NAME` on `add` overrides the default channel.
 """

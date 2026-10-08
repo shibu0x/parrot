@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Check that the scorer can tell the user's real writing from generic AI text.
 
-  python3 extract.py --limit 1000 | python3 eval.py
-  python3 extract.py --samples tweet | python3 eval.py
+  python3 scripts/extract.py --limit 1000 | python3 eval.py
+  python3 scripts/extract.py --samples tweet | python3 eval.py
 
 Holds back 20% of the messages, builds the baseline from the rest, then scores
 the held-back real messages and some generic AI text against it. Real ones
