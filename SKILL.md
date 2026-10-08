@@ -46,6 +46,9 @@ Use the numbers from `stats.py` for Mechanics; don't estimate what was counted. 
 # Writing profile
 updated: <date> | messages analyzed: <N> | confidence: <low|medium|high>
 
+## How you sound
+3-5 sentences, plain words, like a friend describing how this person comes across. Not habits or numbers: the feel. Who they sound like (a role, not a real person: "a builder mid-ship", "a teacher who learned the hard way"), their attitude to the reader, what reading them is like, and how it changes between chat and posts. Every claim must be backed by something in Signature or Samples. End with one line: "in short: ...".
+
 ## Scores (0-100)
 casual, direct, technical, formal, humor, emotional
 
@@ -107,7 +110,7 @@ confidence: chat high · blog high · tweet medium (no tweets yet)
 real you scored 87%, generic AI 71%, 0 of your messages flagged as AI  -> PASS
 ```
 
-Then 4-6 lines on the voice (signature habits with one quote each, channels). If the eval says FAIL, say the style match scores are unreliable for this user and lean on reading the samples.
+Then **how you sound**: the "How you sound" paragraph, word for word, ending with its "in short" line. This is the part people care about most, so never skip it or swap it for a list of habits. After it, 3-4 short lines of the habits that create that sound, each with one real quote. If the eval says FAIL, say the style match scores are unreliable for this user and lean on reading the samples.
 
 Then ask about links (section 5), unless `~/.writer/.socials-dont-ask` exists. Ask every time a profile is built, not just the first time: people post new things.
 
