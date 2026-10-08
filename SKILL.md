@@ -38,9 +38,18 @@ casual, direct, technical, formal, humor, emotional
 - avg sentence length (words), fragments yes/no
 - capitalization (lowercase starts? "i" lowercase?)
 - punctuation habits (periods at end? question marks? "..."? em dashes? exclamation?)
-- typos/spelling: real habits worth keeping (e.g. drops apostrophes) vs noise
 - emoji use
 - language mix (e.g. Hinglish), slang and filler words with examples ("bro", "tbh")
+
+## Signature (copy these)
+Habits that are clearly the user's choice: consistent across many messages and kept even when they had time to write carefully. Lowercase starts at 86%, "bro" as an opener, no full stop at the end, dropping apostrophes in "dont"/"lets" are signature. Give the count next to each.
+
+## Noise (never copy)
+Things that come from typing fast to an AI, not from the voice:
+- typos and misspellings ("becasue", "fiolder"), even frequent ones
+- bare commands to the agent ("fix readme", "kill the process", "push it")
+- pasted logs, code, error output, UI text
+- fragments that only make sense mid-conversation ("done ??", "4000 is ok")
 
 ## Voice
 - how they open and close a message
@@ -54,12 +63,15 @@ casual, direct, technical, formal, humor, emotional
 
 Be concrete. "Casual" is useless; "starts with 'bro', no capital letters, no period at the end" is useful. Count, don't guess.
 
+When unsure whether a habit is signature or noise, ask: would they still do it in a post they reread before sending? If not, it's noise. A habit only goes in Signature if it shows up in at least ~20% of messages or is clearly deliberate (slang, a catchphrase).
+
 Then show the profile to the user in a compact form.
 
 ## 2. Write
 
 1. Read `~/.writer/profile.md`.
-2. Note the gap: chat messages to an AI are not tweets. Keep the voice (word choice, rhythm, attitude, quirks) but fit the format (a tweet is under 280 chars, a blog has structure). Don't copy chat-only habits that make the piece unreadable, keep them if they're the user's signature.
+2. Note the gap: chat messages to an AI are not tweets. Copy everything under Signature, nothing under Noise. Fit the format (a tweet is under 280 chars, a blog has structure).
+   Never add mistakes to look human: no planted typos, random fragments, or fake slang. Text sounds like the user because of their word choice and rhythm, not because it has errors.
 3. Write 3 different drafts.
 4. Get the mechanics score for each draft by counting, not judging:
    ```bash
