@@ -36,10 +36,11 @@ python3 socials.py add medium @you
 python3 socials.py add substack you
 python3 socials.py add x ~/Downloads/twitter-archive.zip      # X: Settings > Download an archive of your data
 python3 socials.py add linkedin ~/Downloads/LinkedInExport.zip
+python3 socials.py add link https://x.com/you/status/123 https://www.linkedin.com/posts/...   # single posts, any site
 python3 socials.py sync                                       # later: fetch new posts only
 ```
 
-Also: any blog RSS feed, dev.to, Bluesky. Only add your own accounts; posts are saved to `~/.writer/samples/` on your machine.
+Also: any blog RSS feed, dev.to, Bluesky. X and LinkedIn profiles need a login, which this tool never uses: give links to single posts (quick) or your data export (everything). Only add your own accounts; posts are saved to `~/.writer/samples/` on your machine.
 
 ## Check
 
