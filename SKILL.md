@@ -28,6 +28,8 @@ python3 <skill-dir>/scripts/extract.py --limit 400
 python3 <skill-dir>/scripts/extract.py --limit 400 | python3 <skill-dir>/scripts/stats.py
 ```
 
+New user with little history? If `extract.py --list` shows fewer than 20 messages in total, there isn't enough chat to learn from (and `stats.py`/`eval.py` will say so). Don't build a guessed profile. Say it plainly: "i only found N messages from you, not enough to learn your voice yet", then go straight to asking for their posts (section 5) and build the profile from those. If they have none either, build it from whatever exists, mark confidence low, and keep drafts close to neutral.
+
 The first prints the user's own messages (`--source claude,codex,...` to restrict, `--list` to see message counts per agent; messages over 1500 chars are dropped as likely pastes; secrets, credentials and emails are already replaced with `[redacted]`). The second prints counted habits: lowercase starts, full stops, question marks, apostrophe drops, openers, top words.
 
 Then pick up new posts from any socials they already added: `python3 <skill-dir>/scripts/socials.py sync` (does nothing if there are none). Don't ask about links yet, that comes after they see the profile.
